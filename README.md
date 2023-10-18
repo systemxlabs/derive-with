@@ -15,3 +15,6 @@ fn test_simple_struct() {
     assert_eq!(foo.b, "1".to_string());
 }
 ```
+
+## References
+- [nrc/derive-new](https://github.com/nrc/derive-new)
