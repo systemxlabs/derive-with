@@ -2,7 +2,10 @@
 name = "derive-with"
 version = "0.1.0"
 edition = "2021"
+authors = ["lewiszlw <lewiszlw520@gmail.com>"]
+description = "`#[derive(with)]` implements with-constructor for each field in struct."
 license = "MIT"
+repository = "https://github.com/systemxlabs/derive-with"
 
 [lib]
 proc-macro = true
