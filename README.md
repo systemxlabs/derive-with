@@ -1,4 +1,4 @@
-# A custom derive implementation for `#[derive(new)]`
+# A custom derive implementation for `#[derive(with)]`
 
 ## Get started
 ```rust
