@@ -1,5 +1,7 @@
-use derive_with::with;
+# A custom derive implementation for `#[derive(new)]`
 
+## Get started
+```rust
 #[derive(with, Default)]
 pub struct Foo {
     pub a: i32,
@@ -12,3 +14,4 @@ fn test_simple_struct() {
     assert_eq!(foo.a, 1);
     assert_eq!(foo.b, "1".to_string());
 }
+```
