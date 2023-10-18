@@ -1,4 +1,6 @@
 # A custom derive implementation for `#[derive(with)]`
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![Crates.io](https://img.shields.io/crates/v/derive-with.svg)](https://crates.io/crates/derive-with)
 
 ## Get started
 ```rust
