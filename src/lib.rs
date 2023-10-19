@@ -16,13 +16,13 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
 fn with_for_struct(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2::TokenStream {
     match *fields {
-        syn::Fields::Named(ref fields) => with_constructor(ast, &fields.named),
-        syn::Fields::Unnamed(ref fields) => todo!(),
+        syn::Fields::Named(ref fields) => with_constructor_for_named(ast, &fields.named),
+        syn::Fields::Unnamed(ref fields) => with_constructor_for_unnamed(ast, &fields.unnamed),
         syn::Fields::Unit => panic!("Unit structs are not supported"),
     }
 }
 
-fn with_constructor(
+fn with_constructor_for_named(
     ast: &syn::DeriveInput,
     fields: &Punctuated<syn::Field, Token![,]>,
 ) -> proc_macro2::TokenStream {
@@ -39,6 +39,36 @@ fn with_constructor(
             impl #impl_generics #name #ty_generics #where_clause {
                 pub fn #constructor_name(mut self, #field_name: #field_type) -> Self {
                     self.#field_name = #field_name;
+                    self
+                }
+            }
+        };
+        constructors = quote! {
+            #constructors
+            #constructor
+        };
+    }
+    constructors
+}
+
+fn with_constructor_for_unnamed(
+    ast: &syn::DeriveInput,
+    fields: &Punctuated<syn::Field, Token![,]>,
+) -> proc_macro2::TokenStream {
+    let name = &ast.ident;
+    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
+
+    let mut constructors = quote!();
+    for (index, field) in fields.iter().enumerate() {
+        let index = syn::Index::from(index);
+        let field_type = &field.ty;
+        let param_name = format_ident!("_{}", index);
+        let constructor_name = format_ident!("with_{}", index);
+
+        let constructor = quote! {
+            impl #impl_generics #name #ty_generics #where_clause {
+                pub fn #constructor_name(mut self, #param_name: #field_type) -> Self {
+                    self.#index = #param_name;
                     self
                 }
             }

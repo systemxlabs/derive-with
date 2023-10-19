@@ -10,11 +10,18 @@ pub struct Foo {
     pub b: String,
 }
 
+#[derive(with, Default)]
+pub struct Bar (i32, String);
+
 #[test]
-fn test_simple_struct() {
+fn test_struct() {
     let foo = Foo::default().with_a(1).with_b(1.to_string());
     assert_eq!(foo.a, 1);
     assert_eq!(foo.b, "1".to_string());
+    
+    let bar = Bar::default().with_0(1).with_1(1.to_string());
+    assert_eq!(bar.0, 1);
+    assert_eq!(bar.1, "1".to_string());
 }
 ```
 
