@@ -4,6 +4,8 @@
 
 ## Get started
 ```rust
+use derive_with::with;
+
 #[derive(with, Default)]
 pub struct Foo {
     pub a: i32,
