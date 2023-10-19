@@ -36,11 +36,9 @@ fn with_constructor_for_named(
         let constructor_name = format_ident!("with_{}", field_name);
 
         let constructor = quote! {
-            impl #impl_generics #name #ty_generics #where_clause {
-                pub fn #constructor_name(mut self, #field_name: #field_type) -> Self {
-                    self.#field_name = #field_name;
-                    self
-                }
+            pub fn #constructor_name(mut self, #field_name: #field_type) -> Self {
+                self.#field_name = #field_name;
+                self
             }
         };
         constructors = quote! {
@@ -48,7 +46,11 @@ fn with_constructor_for_named(
             #constructor
         };
     }
-    constructors
+    quote! {
+        impl #impl_generics #name #ty_generics #where_clause {
+            #constructors
+        }
+    }
 }
 
 fn with_constructor_for_unnamed(
@@ -62,15 +64,13 @@ fn with_constructor_for_unnamed(
     for (index, field) in fields.iter().enumerate() {
         let index = syn::Index::from(index);
         let field_type = &field.ty;
-        let param_name = format_ident!("_{}", index);
+        let param_name = format_ident!("field_{}", index);
         let constructor_name = format_ident!("with_{}", index);
 
         let constructor = quote! {
-            impl #impl_generics #name #ty_generics #where_clause {
-                pub fn #constructor_name(mut self, #param_name: #field_type) -> Self {
-                    self.#index = #param_name;
-                    self
-                }
+            pub fn #constructor_name(mut self, #param_name: #field_type) -> Self {
+                self.#index = #param_name;
+                self
             }
         };
         constructors = quote! {
@@ -78,5 +78,9 @@ fn with_constructor_for_unnamed(
             #constructor
         };
     }
-    constructors
+    quote! {
+        impl #impl_generics #name #ty_generics #where_clause {
+            #constructors
+        }
+    }
 }
