@@ -49,6 +49,17 @@ fn test_struct_with_lifetime_and_generic() {
     assert_eq!(foo.b, "1");
 }
 
+#[derive(with, Default)]
+#[with(a)]
+pub struct Foo4 {
+    pub a: i32,
+    pub b: String,
+}
+#[test]
+fn test_simple_struct_with_args() {
+    let foo = Foo4::default().with_a(1);
+    assert_eq!(foo.a, 1);
+}
 
 /// Tuple Struct Tests
 #[derive(with, Default)]
@@ -85,4 +96,13 @@ fn test_tuple_struct_with_lifetime_and_generic() {
     let bar = Bar3::<i32>::default().with_0(1).with_1("1");
     assert_eq!(bar.0, 1);
     assert_eq!(bar.1, "1");
+}
+
+#[derive(with, Default)]
+#[with(1)]
+pub struct Bar4(i32, String);
+#[test]
+fn test_simple_tuple_struct_with_args() {
+    let bar = Bar4::default().with_1(1);
+    assert_eq!(bar.0, 1);
 }
