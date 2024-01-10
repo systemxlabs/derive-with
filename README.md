@@ -4,7 +4,7 @@
 
 ## Get started
 
-1.Generate with constructor for each field
+1.Generate with-constructor for each field on named struct.
 ```rust
 use derive_with::with;
 
@@ -13,23 +13,41 @@ pub struct Foo {
     pub a: i32,
     pub b: String,
 }
-
-#[derive(with, Default)]
-pub struct Bar (i32, String);
-
-#[test]
-fn test_struct() {
-    let foo = Foo::default().with_a(1).with_b(1.to_string());
-    assert_eq!(foo.a, 1);
-    assert_eq!(foo.b, "1".to_string());
-    
-    let bar = Bar::default().with_0(1).with_1(1.to_string());
-    assert_eq!(bar.0, 1);
-    assert_eq!(bar.1, "1".to_string());
+```
+This will generate code
+```rust
+impl Foo {
+    pub fn with_a(mut self, a: impl Into<i32>) -> Self {
+        self.a = a.into();
+        self
+    }
+    pub fn with_b(mut self, b: impl Into<String>) -> Self {
+        self.b = b.into();
+        self
+    }
 }
 ```
 
-2.Generate with constructor for specific fields
+2.Generate with-constructor for each field on tuple struct.
+```rust
+#[derive(with, Default)]
+pub struct Bar (i32, String);
+```
+This will generate code
+```rust
+impl Bar {
+    pub fn with_0(mut self, field_0: impl Into<i32>) -> Self {
+        self.0 = field_0.into();
+        self
+    }
+    pub fn with_1(mut self, field_1: impl Into<String>) -> Self {
+        self.1 = field_1.into();
+        self
+    }
+}
+```
+
+3.Generate with-constructor for specific fields on named struct.
 ```rust
 #[derive(with, Default)]
 #[with(a)]
@@ -37,18 +55,30 @@ pub struct Foo {
     pub a: i32,
     pub b: String,
 }
+```
+This will generate code
+```rust
+impl Foo {
+    pub fn with_a(mut self, a: impl Into<i32>) -> Self {
+        self.a = a.into();
+        self
+    }
+}
+```
 
+4.Generate with-constructor for specific fields on tuple struct.
+```rust
 #[derive(with, Default)]
 #[with(1)]
 pub struct Bar (i32, String);
-
-#[test]
-fn test_struct() {
-    let foo = Foo::default().with_a(1);
-    assert_eq!(foo.a, 1);
-
-    let bar = Bar::default().with_1(1.to_string());
-    assert_eq!(bar.1, "1".to_string());
+```
+This will generate code
+```rust
+impl Bar {
+    pub fn with_1(mut self, field_1: impl Into<String>) -> Self {
+        self.1 = field_1.into();
+        self
+    }
 }
 ```
 

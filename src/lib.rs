@@ -6,6 +6,59 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Attribute, Index, Meta, Token};
 
+/// A custom derive implementation for `#[derive(with)]`
+///
+/// # Get started
+///
+/// 1.Generate with constructor for each field
+/// ```rust
+/// use derive_with::with;
+///
+/// #[derive(with, Default)]
+/// pub struct Foo {
+///     pub a: i32,
+///     pub b: String,
+/// }
+///
+/// #[derive(with, Default)]
+/// pub struct Bar (i32, String);
+///
+/// #[test]
+/// fn test_struct() {
+///     let foo = Foo::default().with_a(1).with_b(1.to_string());
+///     assert_eq!(foo.a, 1);
+///     assert_eq!(foo.b, "1".to_string());
+///
+///     let bar = Bar::default().with_0(1).with_1(1.to_string());
+///     assert_eq!(bar.0, 1);
+///     assert_eq!(bar.1, "1".to_string());
+/// }
+/// ```
+///
+/// 2.Generate with constructor for specific fields
+/// ```rust
+/// use derive_with::with;
+///
+/// #[derive(with, Default)]
+/// #[with(a)]
+/// pub struct Foo {
+///     pub a: i32,
+///     pub b: String,
+/// }
+///
+/// #[derive(with, Default)]
+/// #[with(1)]
+/// pub struct Bar (i32, String);
+///
+/// #[test]
+/// fn test_struct() {
+///     let foo = Foo::default().with_a(1);
+///     assert_eq!(foo.a, 1);
+///
+///     let bar = Bar::default().with_1(1.to_string());
+///     assert_eq!(bar.1, "1".to_string());
+/// }
+/// ```
 #[proc_macro_derive(with, attributes(with))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).expect("Couldn't parse item");
@@ -43,8 +96,8 @@ fn with_constructor_for_named(
         let constructor_name = format_ident!("with_{}", field_name);
 
         let constructor = quote! {
-            pub fn #constructor_name(mut self, #field_name: #field_type) -> Self {
-                self.#field_name = #field_name;
+            pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
+                self.#field_name = #field_name.into();
                 self
             }
         };
@@ -79,8 +132,8 @@ fn with_constructor_for_unnamed(
         let constructor_name = format_ident!("with_{}", index);
 
         let constructor = quote! {
-            pub fn #constructor_name(mut self, #param_name: #field_type) -> Self {
-                self.#index = #param_name;
+            pub fn #constructor_name(mut self, #param_name: impl Into<#field_type>) -> Self {
+                self.#index = #param_name.into();
                 self
             }
         };
