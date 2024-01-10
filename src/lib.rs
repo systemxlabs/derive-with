@@ -10,7 +10,7 @@ use syn::{Attribute, Index, Meta, Token};
 ///
 /// # Get started
 ///
-/// 1.Generate with constructor for each field
+/// 1.Generate with-constructor for each field
 /// ```rust
 /// use derive_with::with;
 ///
@@ -35,7 +35,7 @@ use syn::{Attribute, Index, Meta, Token};
 /// }
 /// ```
 ///
-/// 2.Generate with constructor for specific fields
+/// 2.Generate with-constructor for specific fields
 /// ```rust
 /// use derive_with::with;
 ///
