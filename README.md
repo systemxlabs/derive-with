@@ -6,7 +6,7 @@
 
 1.Generate with-constructor for each field on named struct.
 ```rust
-#[derive(derive_with::With)]
+#[derive(With)]
 pub struct Foo {
     pub a: i32,
     pub b: String,
@@ -28,7 +28,7 @@ impl Foo {
 
 2.Generate with-constructor for each field on tuple struct.
 ```rust
-#[derive(derive_with::With)]
+#[derive(With)]
 pub struct Bar (i32, String);
 ```
 This will generate code
@@ -47,7 +47,7 @@ impl Bar {
 
 3.Generate with-constructor for specific fields on named struct.
 ```rust
-#[derive(derive_with::With)]
+#[derive(With)]
 #[with(a)]
 pub struct Foo {
     pub a: i32,
@@ -66,7 +66,7 @@ impl Foo {
 
 4.Generate with-constructor for specific fields on tuple struct.
 ```rust
-#[derive(derive_with::With)]
+#[derive(With)]
 #[with(1)]
 pub struct Bar (i32, String);
 ```

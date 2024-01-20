@@ -6,7 +6,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Attribute, Index, Meta, Token};
 
-/// A custom derive implementation for `#[derive(with)]`
+/// A custom derive implementation for `#[derive(With)]`
 ///
 /// # Get started
 ///

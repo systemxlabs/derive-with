@@ -3,7 +3,7 @@ name = "derive-with"
 version = "0.5.0"
 edition = "2021"
 authors = ["lewiszlw <lewiszlw520@gmail.com>"]
-description = "`#[derive(with)]` generates with-constructor for each field in struct."
+description = "`#[derive(With)]` generates with-constructor for each field in struct."
 license = "MIT"
 repository = "https://github.com/systemxlabs/derive-with"
 
