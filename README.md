@@ -1,4 +1,4 @@
-# A custom derive implementation for `#[derive(with)]`
+# A custom derive implementation for `#[derive(With)]`
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![Crates.io](https://img.shields.io/crates/v/derive-with.svg)](https://crates.io/crates/derive-with)
 
@@ -6,9 +6,7 @@
 
 1.Generate with-constructor for each field on named struct.
 ```rust
-use derive_with::with;
-
-#[derive(with)]
+#[derive(derive_with::With)]
 pub struct Foo {
     pub a: i32,
     pub b: String,
@@ -30,7 +28,7 @@ impl Foo {
 
 2.Generate with-constructor for each field on tuple struct.
 ```rust
-#[derive(with)]
+#[derive(derive_with::With)]
 pub struct Bar (i32, String);
 ```
 This will generate code
@@ -49,7 +47,7 @@ impl Bar {
 
 3.Generate with-constructor for specific fields on named struct.
 ```rust
-#[derive(with)]
+#[derive(derive_with::With)]
 #[with(a)]
 pub struct Foo {
     pub a: i32,
@@ -68,7 +66,7 @@ impl Foo {
 
 4.Generate with-constructor for specific fields on tuple struct.
 ```rust
-#[derive(with)]
+#[derive(derive_with::With)]
 #[with(1)]
 pub struct Bar (i32, String);
 ```

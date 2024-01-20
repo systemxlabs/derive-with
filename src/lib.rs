@@ -12,15 +12,15 @@ use syn::{Attribute, Index, Meta, Token};
 ///
 /// 1.Generate with-constructor for each field
 /// ```rust
-/// use derive_with::with;
+/// use derive_with::With;
 ///
-/// #[derive(with, Default)]
+/// #[derive(With, Default)]
 /// pub struct Foo {
 ///     pub a: i32,
 ///     pub b: String,
 /// }
 ///
-/// #[derive(with, Default)]
+/// #[derive(With, Default)]
 /// pub struct Bar (i32, String);
 ///
 /// #[test]
@@ -37,16 +37,16 @@ use syn::{Attribute, Index, Meta, Token};
 ///
 /// 2.Generate with-constructor for specific fields
 /// ```rust
-/// use derive_with::with;
+/// use derive_with::With;
 ///
-/// #[derive(with, Default)]
+/// #[derive(With, Default)]
 /// #[with(a)]
 /// pub struct Foo {
 ///     pub a: i32,
 ///     pub b: String,
 /// }
 ///
-/// #[derive(with, Default)]
+/// #[derive(With, Default)]
 /// #[with(1)]
 /// pub struct Bar (i32, String);
 ///
@@ -59,7 +59,7 @@ use syn::{Attribute, Index, Meta, Token};
 ///     assert_eq!(bar.1, "1".to_string());
 /// }
 /// ```
-#[proc_macro_derive(with, attributes(with))]
+#[proc_macro_derive(With, attributes(with))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).expect("Couldn't parse item");
     let result = match ast.data {

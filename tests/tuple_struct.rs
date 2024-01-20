@@ -1,6 +1,6 @@
-use derive_with::with;
+use derive_with::With;
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Bar(i32, String);
 
 #[test]
@@ -17,7 +17,7 @@ fn test_simple_tuple_struct() {
     assert_eq!(bar.1, "1".to_string());
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Bar1<'a>(i32, &'a str);
 
 #[test]
@@ -27,7 +27,7 @@ fn test_tuple_struct_with_lifetime() {
     assert_eq!(bar.1, "1");
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Bar2<T: Default>(i32, T);
 
 #[test]
@@ -37,7 +37,7 @@ fn test_tuple_struct_with_generic() {
     assert_eq!(bar.1, "1".to_string());
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Bar3<'a, T: Default>(T, &'a str);
 
 #[test]
@@ -47,7 +47,7 @@ fn test_tuple_struct_with_lifetime_and_generic() {
     assert_eq!(bar.1, "1");
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 #[with(1)]
 pub struct Bar4(i32, String);
 

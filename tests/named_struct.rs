@@ -1,6 +1,6 @@
-use derive_with::with;
+use derive_with::With;
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Foo {
     pub a: i32,
     pub b: String,
@@ -20,7 +20,7 @@ fn test_simple_struct() {
     assert_eq!(foo.b, "1".to_string());
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Foo1<'a> {
     pub a: i32,
     pub b: &'a str,
@@ -33,7 +33,7 @@ fn test_struct_with_lifetime() {
     assert_eq!(foo.b, "1");
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Foo2<T: Default> {
     pub a: i32,
     pub b: T,
@@ -46,7 +46,7 @@ fn test_struct_with_generic() {
     assert_eq!(foo.b, "1".to_string());
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 pub struct Foo3<'a, T: Default> {
     pub a: T,
     pub b: &'a str,
@@ -59,7 +59,7 @@ fn test_struct_with_lifetime_and_generic() {
     assert_eq!(foo.b, "1");
 }
 
-#[derive(with, Default)]
+#[derive(With, Default)]
 #[with(a)]
 pub struct Foo4 {
     pub a: i32,
