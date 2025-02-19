@@ -1,10 +1,15 @@
+use std::collections::HashMap;
+
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, ToTokens};
 use syn::parse::Parse;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{Attribute, Index, Meta, Token};
+use syn::{
+    Attribute, GenericParam, Generics, Index, Meta, Path, PredicateType, Token, Type, TypeParam,
+    TypePath, WhereClause, WherePredicate,
+};
 
 /// A custom derive implementation for `#[derive(With)]`
 ///
@@ -84,6 +89,8 @@ fn with_constructor_for_named(
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
+    let generics_map = index_generics(&ast.generics);
+    let where_predicate_map = index_where_predicates(&ast.generics.where_clause);
     let with_args = parse_with_args::<Ident>(&ast.attrs);
 
     let mut constructors = quote!();
@@ -92,21 +99,113 @@ fn with_constructor_for_named(
         if !contains_field(&with_args, field_name) {
             continue;
         }
+        let field_vis = &field.vis;
         let field_type = &field.ty;
         let constructor_name = format_ident!("with_{}", field_name);
 
-        let constructor = quote! {
-            pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
-                self.#field_name = #field_name.into();
-                self
+        // Check the type of the field
+        let constructor = match field_type {
+            // For simple path types
+            Type::Path(type_path) => {
+                // Check if the type matches some generic parameter
+                match generics_map.get(&type_path.path).cloned() {
+                    // If the type is not generic, just use the Into trait to derive the method
+                    None => {
+                        quote! {
+                            #field_vis fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                                Self {
+                                    #field_name: #field_name.into(),
+                                    ..self
+                                }
+                            }
+                        }
+                    }
+                    // If the type is generic, allow to switch types
+                    Some(mut generic) => {
+                        let new_generic = format_ident!("W{}", generic.ident);
+                        // Update the generic ident for the new one, so that it doesn't conflict with the existing
+                        generic.ident = new_generic.clone();
+
+                        // Determine the new generics, which are the existing generics
+                        let mut new_generic_params = Vec::new();
+                        for param in &ast.generics.params {
+                            new_generic_params.push(match param {
+                                // Except for the generic parameter that matches the field type
+                                GenericParam::Type(type_param)
+                                    if type_path.path.is_ident(&type_param.ident) =>
+                                {
+                                    // That must be replaced with the new generic ident
+                                    new_generic.to_token_stream()
+                                }
+                                GenericParam::Type(type_param) => {
+                                    type_param.ident.to_token_stream()
+                                }
+                                GenericParam::Lifetime(lifetime_param) => {
+                                    lifetime_param.lifetime.to_token_stream()
+                                }
+                                GenericParam::Const(const_param) => {
+                                    const_param.ident.to_token_stream()
+                                }
+                            });
+                        }
+
+                        // Compute the new field values, as we can't deconstruct when switching types
+                        let mut other_fields = Vec::new();
+                        for other_field in fields {
+                            let other_field_name = other_field.ident.as_ref().unwrap();
+                            if other_field_name != field_name {
+                                other_fields
+                                    .push(quote! { #other_field_name: self.#other_field_name });
+                            } else {
+                                other_fields.push(quote! { #field_name });
+                            }
+                        }
+
+                        // Retrieve the where predicate affecting this field, if any
+                        let where_clause = where_predicate_map.get(&type_path.path).cloned().map(
+                            |mut predicate| {
+                                // And update the bounded type to the new generic ident
+                                predicate.bounded_ty = Type::Path(TypePath {
+                                    qself: None,
+                                    path: Path::from(new_generic.clone()),
+                                });
+                                quote! { where #predicate }
+                            },
+                        );
+
+                        quote! {
+                            #field_vis fn #constructor_name <#generic> (self, #field_name: #new_generic)
+                            -> #name < #(#new_generic_params),* >
+                            #where_clause
+                            {
+                                #name {
+                                    #(#other_fields),*
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // For every other field type, just use the Into trait to derive the method
+            _ => {
+                quote! {
+                    #field_vis fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                        Self {
+                            #field_name: #field_name.into(),
+                            ..self
+                        }
+                    }
+                }
             }
         };
+
         constructors = quote! {
             #constructors
             #constructor
         };
     }
     quote! {
+        #[automatically_derived]
         impl #impl_generics #name #ty_generics #where_clause {
             #constructors
         }
@@ -119,6 +218,8 @@ fn with_constructor_for_unnamed(
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
+    let generics_map = index_generics(&ast.generics);
+    let where_predicate_map = index_where_predicates(&ast.generics.where_clause);
     let with_args = parse_with_args::<Index>(&ast.attrs);
 
     let mut constructors = quote!();
@@ -127,22 +228,107 @@ fn with_constructor_for_unnamed(
         if !contains_field(&with_args, &index) {
             continue;
         }
+        let field_vis = &field.vis;
         let field_type = &field.ty;
-        let param_name = format_ident!("field_{}", index);
+        let field_name = format_ident!("field_{}", index);
         let constructor_name = format_ident!("with_{}", index);
 
-        let constructor = quote! {
-            pub fn #constructor_name(mut self, #param_name: impl Into<#field_type>) -> Self {
-                self.#index = #param_name.into();
-                self
+        // Check the type of the field
+        let constructor = match field_type {
+            // For simple path types
+            Type::Path(type_path) => {
+                // Check if the type matches some generic parameter
+                match generics_map.get(&type_path.path).cloned() {
+                    // If the type is not generic, just use the Into trait to derive the method
+                    None => {
+                        quote! {
+                            #field_vis fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
+                                self.#index = #field_name.into();
+                                self
+                            }
+                        }
+                    }
+                    // If the type is generic, allow to switch types
+                    Some(mut generic) => {
+                        let new_generic = format_ident!("W{}", generic.ident);
+                        // Update the generic ident for the new one, so that it doesn't conflict with the existing
+                        generic.ident = new_generic.clone();
+
+                        // Determine the new generics, which are the existing generics
+                        let mut new_generic_params = Vec::new();
+                        for param in &ast.generics.params {
+                            new_generic_params.push(match param {
+                                // Except for the generic parameter that matches the field type
+                                GenericParam::Type(type_param)
+                                    if type_path.path.is_ident(&type_param.ident) =>
+                                {
+                                    // That must be replaced with the new generic ident
+                                    new_generic.to_token_stream()
+                                }
+                                GenericParam::Type(type_param) => {
+                                    type_param.ident.to_token_stream()
+                                }
+                                GenericParam::Lifetime(lifetime_param) => {
+                                    lifetime_param.lifetime.to_token_stream()
+                                }
+                                GenericParam::Const(const_param) => {
+                                    const_param.ident.to_token_stream()
+                                }
+                            });
+                        }
+
+                        // Compute the new field values
+                        let mut other_fields = Vec::new();
+                        for (other_index, _) in fields.iter().enumerate() {
+                            let other_index = syn::Index::from(other_index);
+                            if other_index != index {
+                                other_fields.push(quote! { self.#other_index });
+                            } else {
+                                other_fields.push(quote! { #field_name });
+                            }
+                        }
+
+                        // Retrieve the where predicate affecting this field, if any
+                        let where_clause = where_predicate_map.get(&type_path.path).cloned().map(
+                            |mut predicate| {
+                                // And update the bounded type to the new generic ident
+                                predicate.bounded_ty = Type::Path(TypePath {
+                                    qself: None,
+                                    path: Path::from(new_generic.clone()),
+                                });
+                                quote! { where #predicate }
+                            },
+                        );
+
+                        quote! {
+                            #field_vis fn #constructor_name <#generic> (self, #field_name: #new_generic)
+                            -> #name < #(#new_generic_params),* >
+                            #where_clause
+                            {
+                                #name ( #(#other_fields),* )
+                            }
+                        }
+                    }
+                }
+            }
+            // For every other field type, just use the Into trait to derive the method
+            _ => {
+                quote! {
+                    #field_vis fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
+                        self.#index = #field_name.into();
+                        self
+                    }
+                }
             }
         };
+
         constructors = quote! {
             #constructors
             #constructor
         };
     }
     quote! {
+        #[automatically_derived]
         impl #impl_generics #name #ty_generics #where_clause {
             #constructors
         }
@@ -168,4 +354,35 @@ fn contains_field<T: Parse + PartialEq>(
     item: &T,
 ) -> bool {
     with_args.is_none() || with_args.as_ref().unwrap().iter().any(|arg| arg == item)
+}
+
+fn index_generics(generics: &Generics) -> HashMap<Path, TypeParam> {
+    generics
+        .params
+        .iter()
+        .filter_map(|p| match p {
+            GenericParam::Type(type_param) => Some(type_param),
+            _ => None,
+        })
+        .map(|p| (Path::from(p.ident.clone()), p.clone()))
+        .collect()
+}
+
+fn index_where_predicates(where_clause: &Option<WhereClause>) -> HashMap<Path, PredicateType> {
+    where_clause
+        .as_ref()
+        .map(|w| {
+            w.predicates
+                .iter()
+                .filter_map(|p| match p {
+                    WherePredicate::Type(t) => Some(t),
+                    _ => None,
+                })
+                .filter_map(|t| match &t.bounded_ty {
+                    Type::Path(type_path) => Some((type_path.path.clone(), t.clone())),
+                    _ => None,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
