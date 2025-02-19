@@ -99,7 +99,6 @@ fn with_constructor_for_named(
         if !contains_field(&with_args, field_name) {
             continue;
         }
-        let field_vis = &field.vis;
         let field_type = &field.ty;
         let constructor_name = format_ident!("with_{}", field_name);
 
@@ -112,7 +111,7 @@ fn with_constructor_for_named(
                     // If the type is not generic, just use the Into trait to derive the method
                     None => {
                         quote! {
-                            #field_vis fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
                                 Self {
                                     #field_name: #field_name.into(),
                                     ..self
@@ -174,7 +173,7 @@ fn with_constructor_for_named(
                         );
 
                         quote! {
-                            #field_vis fn #constructor_name <#generic> (self, #field_name: #new_generic)
+                            pub fn #constructor_name <#generic> (self, #field_name: #new_generic)
                             -> #name < #(#new_generic_params),* >
                             #where_clause
                             {
@@ -189,7 +188,7 @@ fn with_constructor_for_named(
             // For every other field type, just use the Into trait to derive the method
             _ => {
                 quote! {
-                    #field_vis fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                    pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
                         Self {
                             #field_name: #field_name.into(),
                             ..self
@@ -228,7 +227,6 @@ fn with_constructor_for_unnamed(
         if !contains_field(&with_args, &index) {
             continue;
         }
-        let field_vis = &field.vis;
         let field_type = &field.ty;
         let field_name = format_ident!("field_{}", index);
         let constructor_name = format_ident!("with_{}", index);
@@ -242,7 +240,7 @@ fn with_constructor_for_unnamed(
                     // If the type is not generic, just use the Into trait to derive the method
                     None => {
                         quote! {
-                            #field_vis fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
+                            pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
                                 self.#index = #field_name.into();
                                 self
                             }
@@ -301,7 +299,7 @@ fn with_constructor_for_unnamed(
                         );
 
                         quote! {
-                            #field_vis fn #constructor_name <#generic> (self, #field_name: #new_generic)
+                            pub fn #constructor_name <#generic> (self, #field_name: #new_generic)
                             -> #name < #(#new_generic_params),* >
                             #where_clause
                             {
@@ -314,7 +312,7 @@ fn with_constructor_for_unnamed(
             // For every other field type, just use the Into trait to derive the method
             _ => {
                 quote! {
-                    #field_vis fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
+                    pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
                         self.#index = #field_name.into();
                         self
                     }
