@@ -90,6 +90,36 @@ impl Bar {
 }
 ```
 
+5.Generate with-constructor for generic fields
+```rust
+#[derive(With, Default)]
+pub struct Foo<T: Default, Z: Default>
+where
+    Z: std::fmt::Debug,
+{
+    pub a: T,
+    pub b: Z,
+}
+```
+This will generate code
+```rust
+#[automatically_derived]
+impl<T: Default, Z: Default> Foo<T, Z>
+where
+    Z: std::fmt::Debug,
+{
+    pub fn with_a<WT: Default>(self, a: WT) -> Foo<WT, Z> {
+        Foo { a, b: self.b }
+    }
+    pub fn with_b<WZ: Default>(self, b: WZ) -> Foo<T, WZ>
+    where
+        WZ: std::fmt::Debug,
+    {
+        Foo { a: self.a, b }
+    }
+}
+```
+
 More examples can be found in [tests](./tests/)
 
 ## References
