@@ -56,3 +56,18 @@ fn test_simple_tuple_struct_with_args() {
     let bar = Bar4::default().with_1("1");
     assert_eq!(bar.1, "1");
 }
+
+#[derive(With, Default)]
+pub struct Bar5<T: Default, Z: Default>(T, Z)
+where
+    Z: std::fmt::Debug;
+
+#[test]
+fn test_tuple_struct_switch_generic() {
+    let bar = Bar5::<String, String>::default().with_0(1);
+    assert_eq!(bar.0, 1);
+    assert_eq!(bar.1, "");
+
+    let bar = bar.with_1(2);
+    assert_eq!(bar.1, 2);
+}
