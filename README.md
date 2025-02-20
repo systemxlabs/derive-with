@@ -14,14 +14,19 @@ pub struct Foo {
 ```
 This will generate code
 ```rust
+#[automatically_derived]
 impl Foo {
-    pub fn with_a(mut self, a: impl Into<i32>) -> Self {
-        self.a = a.into();
-        self
+    pub fn with_a(self, a: impl Into<i32>) -> Self {
+        Self {
+            a: a.into(),
+            ..self
+        }
     }
-    pub fn with_b(mut self, b: impl Into<String>) -> Self {
-        self.b = b.into();
-        self
+    pub fn with_b(self, b: impl Into<String>) -> Self {
+        Self {
+            b: b.into(),
+            ..self
+        }
     }
 }
 ```
@@ -33,6 +38,7 @@ pub struct Bar (i32, String);
 ```
 This will generate code
 ```rust
+#[automatically_derived]
 impl Bar {
     pub fn with_0(mut self, field_0: impl Into<i32>) -> Self {
         self.0 = field_0.into();
@@ -56,10 +62,13 @@ pub struct Foo {
 ```
 This will generate code
 ```rust
+#[automatically_derived]
 impl Foo {
-    pub fn with_a(mut self, a: impl Into<i32>) -> Self {
-        self.a = a.into();
-        self
+    pub fn with_a(self, a: impl Into<i32>) -> Self {
+        Self {
+            a: a.into(),
+            ..self
+        }
     }
 }
 ```
@@ -72,6 +81,7 @@ pub struct Bar (i32, String);
 ```
 This will generate code
 ```rust
+#[automatically_derived]
 impl Bar {
     pub fn with_1(mut self, field_1: impl Into<String>) -> Self {
         self.1 = field_1.into();
@@ -79,6 +89,8 @@ impl Bar {
     }
 }
 ```
+
+More examples can be found in [tests](./tests/)
 
 ## References
 - [nrc/derive-new](https://github.com/nrc/derive-new)

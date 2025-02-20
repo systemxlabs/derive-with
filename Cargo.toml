@@ -1,6 +1,6 @@
 [package]
 name = "derive-with"
-version = "0.5.1"
+version = "0.6"
 edition = "2021"
 authors = ["lewiszlw <lewiszlw520@gmail.com>"]
 description = "`#[derive(With)]` generates with-constructor for each field in struct."

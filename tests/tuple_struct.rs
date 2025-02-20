@@ -49,6 +49,7 @@ fn test_tuple_struct_with_lifetime_and_generic() {
 
 #[derive(With, Default)]
 #[with(1)]
+#[allow(dead_code)]
 pub struct Bar4(i32, String);
 
 #[test]
