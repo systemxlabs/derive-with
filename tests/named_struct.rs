@@ -90,3 +90,14 @@ fn test_struct_switch_generic() {
     let foo = foo.with_b(2);
     assert_eq!(foo.b, 2);
 }
+
+#[test]
+fn test_single_field_struct() {
+    #[derive(With, Default)]
+    pub struct SingleField {
+        pub single: String,
+    }
+
+    let foo = SingleField::default().with_single("a".to_string());
+    assert_eq!(&foo.single, "a");
+}

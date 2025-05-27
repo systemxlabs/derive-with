@@ -92,6 +92,7 @@ fn with_constructor_for_named(
     let generics_map = index_generics(&ast.generics);
     let where_predicate_map = index_where_predicates(&ast.generics.where_clause);
     let with_args = parse_with_args::<Ident>(&ast.attrs);
+    let field_count = fields.len();
 
     let mut constructors = quote!();
     for field in fields {
@@ -109,16 +110,12 @@ fn with_constructor_for_named(
                 // Check if the type matches some generic parameter
                 match generics_map.get(&type_path.path).cloned() {
                     // If the type is not generic, just use the Into trait to derive the method
-                    None => {
-                        quote! {
-                            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
-                                Self {
-                                    #field_name: #field_name.into(),
-                                    ..self
-                                }
-                            }
-                        }
-                    }
+                    None => generate_constructor_for_named(
+                        &constructor_name,
+                        field_name,
+                        field_type,
+                        field_count,
+                    ),
                     // If the type is generic, allow to switch types
                     Some(mut generic) => {
                         let new_generic = format_ident!("W{}", generic.ident);
@@ -186,16 +183,12 @@ fn with_constructor_for_named(
                 }
             }
             // For every other field type, just use the Into trait to derive the method
-            _ => {
-                quote! {
-                    pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
-                        Self {
-                            #field_name: #field_name.into(),
-                            ..self
-                        }
-                    }
-                }
-            }
+            _ => generate_constructor_for_named(
+                &constructor_name,
+                field_name,
+                field_type,
+                field_count,
+            ),
         };
 
         constructors = quote! {
@@ -383,4 +376,30 @@ fn index_where_predicates(where_clause: &Option<WhereClause>) -> HashMap<Path, P
                 .collect()
         })
         .unwrap_or_default()
+}
+
+fn generate_constructor_for_named(
+    constructor_name: &Ident,
+    field_name: &Ident,
+    field_type: &Type,
+    field_count: usize,
+) -> proc_macro2::TokenStream {
+    if field_count == 1 {
+        quote! {
+            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                Self {
+                    #field_name: #field_name.into(),
+                }
+            }
+        }
+    } else {
+        quote! {
+            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+                Self {
+                    #field_name: #field_name.into(),
+                    ..self
+                }
+            }
+        }
+    }
 }
