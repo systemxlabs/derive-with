@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::parse::Parse;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
@@ -28,7 +28,6 @@ use syn::{
 /// #[derive(With, Default)]
 /// pub struct Bar (i32, String);
 ///
-/// #[test]
 /// fn test_struct() {
 ///     let foo = Foo::default().with_a(1).with_b(1.to_string());
 ///     assert_eq!(foo.a, 1);
@@ -55,7 +54,6 @@ use syn::{
 /// #[with(1)]
 /// pub struct Bar (i32, String);
 ///
-/// #[test]
 /// fn test_struct() {
 ///     let foo = Foo::default().with_a(1);
 ///     assert_eq!(foo.a, 1);
@@ -326,7 +324,7 @@ fn with_constructor_for_unnamed(
     }
 }
 
-fn parse_with_args<T: Parse>(attrs: &Vec<Attribute>) -> Option<Punctuated<T, Comma>> {
+fn parse_with_args<T: Parse>(attrs: &[Attribute]) -> Option<Punctuated<T, Comma>> {
     if let Some(attr) = attrs.iter().find(|attr| attr.path().is_ident("with")) {
         match &attr.meta {
             Meta::List(list) => Some(
