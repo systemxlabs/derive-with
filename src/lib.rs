@@ -229,14 +229,13 @@ fn with_constructor_for_unnamed(
                 // Check if the type matches some generic parameter
                 match generics_map.get(&type_path.path).cloned() {
                     // If the type is not generic, just use the Into trait to derive the method
-                    None => {
-                        quote! {
-                            pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
-                                self.#index = #field_name.into();
-                                self
-                            }
-                        }
-                    }
+                    None => generate_constructor_for_unnamed(
+                        &constructor_name,
+                        index,
+                        &field_name,
+                        field_type,
+                    ),
+
                     // If the type is generic, allow to switch types
                     Some(mut generic) => {
                         let new_generic = format_ident!("W{}", generic.ident);
@@ -302,12 +301,7 @@ fn with_constructor_for_unnamed(
             }
             // For every other field type, just use the Into trait to derive the method
             _ => {
-                quote! {
-                    pub fn #constructor_name(mut self, #field_name: impl Into<#field_type>) -> Self {
-                        self.#index = #field_name.into();
-                        self
-                    }
-                }
+                generate_constructor_for_unnamed(&constructor_name, index, &field_name, field_type)
             }
         };
 
@@ -382,9 +376,13 @@ fn generate_constructor_for_named(
     field_type: &Type,
     field_count: usize,
 ) -> proc_macro2::TokenStream {
+    let field_arg_type = match field_type {
+        Type::Path(type_path) if is_builtin_numeric_type(&type_path.path) => quote! { #field_type },
+        _ => quote! { impl Into<#field_type> },
+    };
     if field_count == 1 {
         quote! {
-            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+            pub fn #constructor_name(self, #field_name: #field_arg_type) -> Self {
                 Self {
                     #field_name: #field_name.into(),
                 }
@@ -392,7 +390,7 @@ fn generate_constructor_for_named(
         }
     } else {
         quote! {
-            pub fn #constructor_name(self, #field_name: impl Into<#field_type>) -> Self {
+            pub fn #constructor_name(self, #field_name: #field_arg_type) -> Self {
                 Self {
                     #field_name: #field_name.into(),
                     ..self
@@ -400,4 +398,48 @@ fn generate_constructor_for_named(
             }
         }
     }
+}
+
+fn generate_constructor_for_unnamed(
+    constructor_name: &Ident,
+    field_index: Index,
+    field_name: &Ident,
+    field_type: &Type,
+) -> proc_macro2::TokenStream {
+    let field_arg_type = match field_type {
+        Type::Path(type_path) if is_builtin_numeric_type(&type_path.path) => {
+            quote! { #field_type }
+        }
+        _ => quote! { impl Into<#field_type> },
+    };
+    quote! {
+        pub fn #constructor_name(mut self, #field_name: #field_arg_type) -> Self {
+            self.#field_index = #field_name.into();
+            self
+        }
+    }
+}
+
+/// Check if a path represents a built-in numeric type
+fn is_builtin_numeric_type(path: &Path) -> bool {
+    // Get the string representation of the path
+    let path_str = path.to_token_stream().to_string();
+
+    // Check for common numeric types
+    matches!(
+        path_str.as_str(),
+        "i8" | "i16"
+            | "i32"
+            | "i64"
+            | "i128"
+            | "isize"
+            | "u8"
+            | "u16"
+            | "u32"
+            | "u64"
+            | "u128"
+            | "usize"
+            | "f32"
+            | "f64"
+    )
 }
